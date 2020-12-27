@@ -1,0 +1,24 @@
+{
+  "num_rx" :1,
+"virt_ant" : 1,
+"num_chirps" : 128,
+"num_adc_samples" : 200,
+"range_resolution" : 0.0335,
+"doppler_resolution" : 0.020,
+"num_frames" : 1000,
+"skip_size" : 4,
+"angle_res" : 1,
+"angle_range" : 90,
+"angle_bins" : (angle_range * 2) // angle_res + 1,
+"bins_processed" : 112,
+"c" : 3e8,  # speed of light (m/s)
+"sample_rate" : 4000,  # rate at which the radar samples from adc (ksps - kilosamples per second)
+"freq_slope" : 70,  # frequency slope of the chirp (mhz/us)
+"adc_samples" : 200,  # number of samples from a single chirp
+"start_freq" : 77,  # starting frequency of the chirp (ghz)
+"idle_time" : 7,  # time before starting next chirp (us)
+"ramp_end_time" : 57,  # time after sending each chirp (us)
+"num_tx" : 2  # number of transmitters
+
+
+}
