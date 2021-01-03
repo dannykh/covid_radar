@@ -1,6 +1,6 @@
 import glob
 
-dist_range_bottom, dist_range_top = 2.15, 2.3
+dist_range_bottom, dist_range_top = 1.8, 2.4
 freq_range_bottom, freq_range_top = 0, 2
 
 slow_sample_rate = 0.05  # sec

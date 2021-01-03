@@ -25,9 +25,9 @@ def forceAspect(ax, aspect):
     ax.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect)
 
 
-def plot_range_maps(named_range_maps, fig: plt.Figure):
-    plt.xlabel("Range(m)")
-    plt.ylabel("Time(s)")
+def plot_range_maps(named_range_maps, xlable, ylable, title):
+    plt.xlabel(xlable)
+    plt.ylabel(ylable)
 
     for name, plot in named_range_maps.items():
         fig, ax = plt.subplots(1, 1)
@@ -36,7 +36,7 @@ def plot_range_maps(named_range_maps, fig: plt.Figure):
         forceAspect(ax, aspect=1)
         fig.colorbar(im, ax=ax, orientation='horizontal', fraction=.1)
 
-        plt.title(name)
+        plt.title(f"{name}-{title}")
         fig.show()
         plt.waitforbuttonpress()
         plt.close(fig)

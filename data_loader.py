@@ -30,6 +30,9 @@ def load_file(file_path, radar_config=None, discard_rx=True):
                                    num_samples=NUM_ADC_SAMPLES)
     if discard_rx:
         # Discard Rx axis
-        all_data = all_data.reshape(all_data.shape[0],  all_data.shape[3])
+        if NUM_CHIRPS > 1:
+            all_data = all_data.reshape(all_data.shape[0], all_data.shape[1], all_data.shape[3])
+        else:
+            all_data = all_data.reshape(all_data.shape[0], all_data.shape[3])
 
     return all_data, range_res, velocity_res
