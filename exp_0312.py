@@ -10,6 +10,7 @@ from etc.config_1 import adc_samples, NUM_FRAMES
 from filter_params import dist_range_bottom, dist_range_top, all_data, freq_range_top, freq_range_bottom, \
     slow_sample_rate, time_filter_bottom, time_filter_top
 from plot_utils import plot_named_list, plot_range_maps
+from signal_generation import table
 
 fig = plt.figure()
 range_res, _ = dsp.range_resolution(200, 4000, 70)
@@ -24,17 +25,18 @@ times = np.arange(0, NUM_FRAMES) * slow_sample_rate
 time_mask = (time_filter_bottom < times) & (times < time_filter_top)
 times_filtered = times[time_mask]
 
-keyword = "nimrod"
+keyword = "s"
 
 data_set = [
-    "nimrod_10_1",
-    "empty_10_1",
+    # "nimrod_10_1",
+    # "empty_10_1",
     # "txrx1",
     # "nimrod_10db_12hz"
 ]
 
 working_data = {
-    name: load_file(all_data[name])[0] for name in data_set
+    # name: load_file(all_data[name])[0] for name in data_set
+    "stationary": table
 }
 
 # working_data = {
@@ -122,15 +124,15 @@ partial_frequency_maps = {
 }
 
 # plot preprocessing
-best_phase_map_partial["nimrod_10_1"] -= 10
+# best_phase_map_partial["nimrod_10_1"] -= 10
 
 # Plots
 # while True:
-# plot_range_maps(raw_power_maps, "Sample", "Power", "Raw")
-# plot_range_maps(i_maps, "Range(m)", "FFT amp", "In-phase")
-# plot_range_maps(q_maps, "Range(m)", "FFT amp", "Quadrature")
-# plot_range_maps(working_set, "Range(m)", "time(s)", "Range-Time")
-# plot_range_maps(phase_maps, "phase(rad)", "time(m)", "Range-Phase-Time")
+plot_range_maps(raw_power_maps, "Sample", "Power", "Raw")
+plot_range_maps(i_maps, "Range(m)", "FFT amp", "In-phase")
+plot_range_maps(q_maps, "Range(m)", "FFT amp", "Quadrature")
+plot_range_maps(working_set, "Range(m)", "time(s)", "Range-Time")
+plot_range_maps(phase_maps, "phase(rad)", "time(m)", "Range-Phase-Time")
 plot_named_list(avg_power_maps, ranges_filtered, "range(m)", "Power", scatter=True)
 plot_named_list(best_phase_map_partial, times_filtered, "times(s)", "Phase(rad)")
 plot_named_list(partial_frequency_maps, frequencies_filtered * 60, "Frequency(BPM)", "Amplitude")

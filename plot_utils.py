@@ -40,3 +40,15 @@ def plot_range_maps(named_range_maps, xlable, ylable, title):
         fig.show()
         plt.waitforbuttonpress()
         plt.close(fig)
+
+
+def fixed_aspect_ratio(ratio, ax):
+    '''
+    Set a fixed aspect ratio on matplotlib plots
+    regardless of axis units
+    '''
+    xvals, yvals = ax.axes.get_xlim(), ax.axes.get_ylim()
+
+    xrange = xvals[1] - xvals[0]
+    yrange = yvals[1] - yvals[0]
+    ax.set_aspect(ratio * (xrange / yrange), adjustable='box')
