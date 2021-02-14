@@ -41,7 +41,7 @@ def do_person(idx):
     plt.plot(filtered_period, filtered_sample_belt)
     plt.plot(filtered_period, filtered_sample_vic)
     plt.plot(filtered_period, filtered_sample_heart)
-    plt.legend(["belt", "vic32", "heart"])
+    plt.legend(["Full Chest", "Chest Patch", "ECG"])
     plt.show()
 
     plt.plot(freqs_filtered * 60, belt_fft_filtered)
