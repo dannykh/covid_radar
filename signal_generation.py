@@ -56,12 +56,12 @@ amp_r = 1  # db
 
 targets = [
     # (dist, [( Amplitude (m) , Frequency (Hz) , Phase (Rad))...])
-    (1, [(0.1, 0.1, 0), ]),
+    # (1, [(0.1, 0.1, 0), ]),
 
-    (2, [(0.05, 2, 0), ]),
+    (2, [(0.05, 1, 0), ]),
 
-    (3, [(0.05, 2, 0),
-         (0.1, 0.1, 0), ]),
+    # (3, [(0.05, 2, 0),
+    #      (0.1, 0.1, 0), ]),
 
 ]
 
@@ -91,10 +91,13 @@ def get_delays(t):
 
 
 def _mixing_func(t):
-    t_d = get_delays(t % T_r)
-    return amp_t * amp_r * np.exp(1j * (2 * PI * (m_w * t_d) * (t % T_r) +
-                                        2 * PI * f_0 * t_d +
-                                        PI * m_w * t_d ** 2))
+    t_ds = get_delays(t)
+
+    def _mix(t_d):
+        return amp_t * amp_r * np.exp(1j * (2 * PI * (m_w * t_d) * (t % T_r) +
+                                            2 * PI * f_0 * t_d))
+
+    return np.sum([_mix(t_d) for t_d in t_ds], axis=0)
 
 
 def _freq_to_dist(freq):
@@ -115,15 +118,15 @@ freq_res = f_s / n_s
 # print(len(t_sample))
 # v_sample = _mixing_func(t_sample)
 
-table = np.zeros((n_r, n_s))
+table = np.zeros((n_r, n_s), dtype=np.complex)
 
 for chirp_nr in range(n_r):
     t_start = int(chirp_nr * (1 / f_chirp))
     t_frame = np.linspace(t_start, t_start + T_r, n_s)
-    v_sample = itr(t_frame)
+    v_sample = _mixing_func(t_frame)
     table[chirp_nr, :] = v_sample
 
-table = load_file(all_data["65cm"])[0]
+# table = load_file(all_data["65cm"])[0]
 table -= np.average(table)
 
 chirp0_samples = table[0, :]
@@ -168,13 +171,13 @@ phase_frequencies = np.arange(0, n_r // 2) * f_chirp / n_r
 phase_freq_filter = (phase_frequencies > freq_range_bottom) & (phase_frequencies < freq_range_top)
 phase_freq_filtered = phase_frequencies[phase_freq_filter]
 
-phase_filter = (phases > 0) & (phases < 1.1)
+phase_filter = np.abs(phase_fft) < 150
 phases_fft_filtered = phase_fft.copy()
 phases_fft_filtered[phase_filter] = 0
 
 reconstructed_phases = ifft(phases_fft_filtered)
 
-aspect = 0.01
+aspect = 0.1
 
 fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(10, 8), constrained_layout=True)
 abs_axes = ax[0, 0]
@@ -205,22 +208,22 @@ phi_axes.set_aspect(aspect, adjustable='box')
 best_phase_axes.plot(slow_time_filtered, phases[slow_time_filter])
 best_phase_axes.set_xlabel("Time [s]")
 best_phase_axes.set_ylabel("Phase [Rad]")
-best_phase_axes.set_title(f"$A(j\omega)$ at dist {max_power_bin}")
+best_phase_axes.set_title(f"$∠A(j\omega)$ at dist {max_power_bin}")
 
 fft_axes.plot(phase_freq_filtered, np.abs(phase_fft[:n_r // 2][phase_freq_filter]))
 fft_axes.set_xlabel("Frequency [Hz]")
 fft_axes.set_ylabel("FFT power [pure]")
-fft_axes.set_title(f"$A(j\omega)$ at dist {max_power_bin} FFT")
+fft_axes.set_title(f"$∠A(j\omega)$ at dist {max_power_bin} FFT")
 
 filtered_fft_axes.plot(phase_freq_filtered, np.abs(phases_fft_filtered[:n_r // 2][phase_freq_filter]))
 filtered_fft_axes.set_xlabel("Frequency [Hz]")
 filtered_fft_axes.set_ylabel("FFT power [pure]")
-filtered_fft_axes.set_title(f"$A(j\omega)$ FFT filtered")
+filtered_fft_axes.set_title(f"$∠A(j\omega)$ FFT filtered")
 
 reconstructed_phases_axes.plot(slow_time_filtered, reconstructed_phases[slow_time_filter])
 reconstructed_phases_axes.set_xlabel("time [s]")
 reconstructed_phases_axes.set_ylabel("Phase [Rad]")
-reconstructed_phases_axes.set_title(f"$A(j\omega)$ reconstructed")
+reconstructed_phases_axes.set_title(f"$∠A(j\omega)$ reconstructed")
 
 fig.suptitle("Range FFT table visualized.")
 
