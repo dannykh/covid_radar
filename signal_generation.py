@@ -1,7 +1,8 @@
 import numpy as np
+import scipy
 from matplotlib import pyplot as plt
 
-from data_loader import load_file
+from radar_utils.data_loader import load_file
 from dsp_utils import extract_phases
 from filter_params import all_data, dist_range_bottom, dist_range_top, time_filter_bottom, time_filter_top, \
     freq_range_bottom, freq_range_top
@@ -58,20 +59,53 @@ targets = [
     # (dist, [( Amplitude (m) , Frequency (Hz) , Phase (Rad))...])
     # (1, [(0.1, 0.1, 0), ]),
 
-    (2, [(0.05, 1, 0), ]),
+    (2, [(0.006, 0.2, 0), ]),
 
-    # (3, [(0.05, 2, 0),
+    # (2.5, [(0.05, 2, 0),
     #      (0.1, 0.1, 0), ]),
 
 ]
+belt_dist = 2
+
+mat = scipy.io.loadmat(f"chest_measurements/Free_T{4}.mat")
+
+belt_data = mat["mp36_s"][1] / 1e3  # sampled at 100 Hz, in mm
+belt_data_20hz = belt_data[::5][:n_r]
 
 
-def get_range(dist, harmonics, t):
+def get_belt_at_chirp(chirp_idx: int):
+    return np.zeros((1, n_s)) + belt_dist + belt_data_20hz[chirp_idx]
+
+
+def generate_harmonic_motion(dist, harmonics, t):
     return dist + np.sum([amp * np.cos(2 * PI * freq * t + phase) for (amp, freq, phase) in harmonics], axis=0)
 
 
+def get_belt_at_time(t):
+    return get_belt_at_chirp(int(t[0] * f_chirp))
+
+
 def get_all_ranges(t):
-    return np.array([get_range(dist, harmonics, t) for dist, harmonics in targets])
+    return np.array([generate_harmonic_motion(dist, motion, t) for dist, motion in targets])
+
+
+def get_all_ranges_belt(t):
+    return np.array([get_belt_at_time(t)])
+
+
+# timeline_2 = np.linspace(0,5,1000)
+# ranges_2 = get_all_ranges(timeline_2)[0]
+# plt.plot(timeline_2, ranges_2)
+# timeline = np.linspace(0, 10, 300)
+# ranges = get_all_ranges(timeline)[0]
+# plt.plot(timeline, ranges)
+# plt.show()
+# warped = np.arctan2(np.sin(ranges), np.cos(ranges))
+# plt.plot(timeline, warped)
+# plt.show()
+# unwrapped = np.unwrap(warped)
+# plt.plot(timeline, unwrapped)
+# plt.show()
 
 
 def itr(t):
@@ -86,12 +120,13 @@ def itr(t):
     return v
 
 
-def get_delays(t):
-    return 2 * get_all_ranges(t) / c
+def get_delays(ranges_t):
+    return 2 * ranges_t / c
 
 
-def _mixing_func(t):
-    t_ds = get_delays(t)
+def _mixing_func_td(t):
+    rngs = get_all_ranges_belt(t)
+    t_ds = get_delays(rngs)
 
     def _mix(t_d):
         return amp_t * amp_r * np.exp(1j * (2 * PI * (m_w * t_d) * (t % T_r) +
@@ -103,10 +138,6 @@ def _mixing_func(t):
 def _freq_to_dist(freq):
     return (T_r * c / (2 * f_r)) * freq
 
-
-# time_line = np.linspace(0, T_r, n_s)
-# print(time_line)
-# mixed_sig = _mixing_func(time_line)
 
 freq_res = f_s / n_s
 
@@ -121,16 +152,16 @@ freq_res = f_s / n_s
 table = np.zeros((n_r, n_s), dtype=np.complex)
 
 for chirp_nr in range(n_r):
-    t_start = int(chirp_nr * (1 / f_chirp))
+    t_start = chirp_nr * (1 / f_chirp)
     t_frame = np.linspace(t_start, t_start + T_r, n_s)
-    v_sample = _mixing_func(t_frame)
+    v_sample = _mixing_func_td(t_frame)
     table[chirp_nr, :] = v_sample
 
 # table = load_file(all_data["65cm"])[0]
 table -= np.average(table)
 
 chirp0_samples = table[0, :]
-chirp0_magnitude = np.abs(fft(chirp0_samples))
+chirp0_magnitude = np.abs(fft(chirp0_samples, axis=0))
 frequencies = np.arange(0, n_s // 2) * f_s / n_s
 
 
@@ -139,7 +170,7 @@ def freq_to_range(f):
 
 
 ranges = np.around(freq_to_range(frequencies), 3)
-range_filter = (ranges > dist_range_bottom) & (ranges < dist_range_top)
+range_filter = (ranges >= dist_range_bottom) & (ranges < dist_range_top)
 ranges = ranges[range_filter]
 
 range_table = np.zeros((n_r, n_s // 2), dtype=np.csingle)
@@ -154,11 +185,14 @@ phase_range_map = extract_phases(range_table)
 
 avg_abs_power = np.average(np.abs(range_table), axis=0)
 max_power_bin_idx = np.argmax(avg_abs_power)
+# max_power_bin_idx = 46
 max_power_bin = ranges[max_power_bin_idx]
 print(f"Max power at index {max_power_bin_idx} is {max_power_bin}")
 
 max_bin = range_table[:, max_power_bin_idx]
 phases = phase_range_map[:, max_power_bin_idx]
+
+displacements = phases * lambda_0 / (4 * PI)
 
 slow_timeline = np.arange(0, n_r) * (1 / f_chirp)
 slow_time_filter = (slow_timeline > time_filter_bottom) & (slow_timeline < time_filter_top)
@@ -166,12 +200,13 @@ slow_time_filtered = slow_timeline[slow_time_filter]
 
 h = hanning(n_r)
 phase_fft = fft(phases * (h))
-phase_frequencies = np.arange(0, n_r // 2) * f_chirp / n_r
+phase_freqs_full = np.arange(0, n_r) * f_chirp / n_r
+phase_frequencies = phase_freqs_full[:len(phase_freqs_full) // 2]
 
 phase_freq_filter = (phase_frequencies > freq_range_bottom) & (phase_frequencies < freq_range_top)
 phase_freq_filtered = phase_frequencies[phase_freq_filter]
 
-phase_filter = np.abs(phase_fft) < 150
+phase_filter = (np.abs(phase_fft) < 150) | ((phase_freqs_full < 0.1) | (phase_freqs_full > 2))
 phases_fft_filtered = phase_fft.copy()
 phases_fft_filtered[phase_filter] = 0
 
@@ -205,7 +240,8 @@ phi_axes.set_xticks(range(ranges.size)[::10])
 phi_axes.set_xticklabels(ranges[::10], rotation=90)
 phi_axes.set_aspect(aspect, adjustable='box')
 
-best_phase_axes.plot(slow_time_filtered, phases[slow_time_filter])
+best_phase_axes.plot(slow_time_filtered, belt_data_20hz[slow_time_filter])
+best_phase_axes.plot(slow_time_filtered, displacements[slow_time_filter])
 best_phase_axes.set_xlabel("Time [s]")
 best_phase_axes.set_ylabel("Phase [Rad]")
 best_phase_axes.set_title(f"$∠A(j\omega)$ at dist {max_power_bin}")

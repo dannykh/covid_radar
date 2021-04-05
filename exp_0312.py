@@ -4,7 +4,7 @@ from mmwave import dsp
 # Radar specific parameters
 from mmwave.dsp import Window
 
-from data_loader import load_file
+from radar_utils.data_loader import load_file
 from dsp_utils import extract_phases
 from etc.config_1 import adc_samples, NUM_FRAMES
 from filter_params import dist_range_bottom, dist_range_top, all_data, freq_range_top, freq_range_bottom, \

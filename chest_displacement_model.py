@@ -18,7 +18,7 @@ def do_person(idx):
     sample_rate = len(belt_data) / sample_duration  # Hz
     sample_period = np.arange(0, len(belt_data)) / sample_rate
 
-    time_window_min, time_window_max = 0, 30
+    time_window_min, time_window_max = 0, 50
     filtered_period_mask = (time_window_min <= sample_period) & (sample_period <= time_window_max)
     filtered_period = sample_period[filtered_period_mask]
 
@@ -39,9 +39,9 @@ def do_person(idx):
     belt_fft_filtered = belt_fft[freq_mask]
 
     plt.plot(filtered_period, filtered_sample_belt)
-    plt.plot(filtered_period, filtered_sample_vic)
+    # plt.plot(filtered_period, filtered_sample_vic)
     plt.plot(filtered_period, filtered_sample_heart)
-    plt.legend(["Full Chest", "Chest Patch", "ECG"])
+    plt.legend(["Full Chest", "ECG"])
     plt.show()
 
     plt.plot(freqs_filtered * 60, belt_fft_filtered)
