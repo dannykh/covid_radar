@@ -1,10 +1,9 @@
 import numpy as np
 # Radar specific parameters
-from mmwave.dataloader import DCA1000
 from mmwave.dsp import range_resolution, doppler_resolution
 
-from etc.config_1 import NUM_RX, NUM_CHIRPS, NUM_ADC_SAMPLES, NUM_FRAMES, sample_rate, freq_slope, adc_samples, \
-    start_freq, idle_time, ramp_end_time, RANGE_RESOLUTION
+from etc.config_1 import NUM_CHIRPS, NUM_ADC_SAMPLES, sample_rate, freq_slope, adc_samples, \
+    start_freq, idle_time, ramp_end_time
 
 # Data specific parameters
 

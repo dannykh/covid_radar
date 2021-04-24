@@ -4,7 +4,7 @@ from mmwave import dsp
 # Radar specific parameters
 from mmwave.dsp import Window
 
-from data_loader import load_file
+from radar_utils.data_loader import load_file
 from etc.config_1 import adc_samples, NUM_CHIRPS
 
 fig = plt.figure()
