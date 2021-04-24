@@ -13,9 +13,9 @@ def unwrap(phase_map):
 
 
 def extract_phases(im_vec):
-    phases = np.arctan2(im_vec.imag, im_vec.real)
-    unwrapped_phases = unwrap(phases)
-    return unwrapped_phases
+    phases = np.angle(im_vec)
+    phases = np.unwrap(phases, axis=0)
+    return phases
 
 
 def get_phase_fft(phase_vec):

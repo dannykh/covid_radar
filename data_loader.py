@@ -24,7 +24,7 @@ ranges = np.arange(adc_samples) * range_res
 
 
 def load_file(file_path, radar_config=None, discard_rx=True):
-    adc_data = np.fromfile(file_path, dtype=np.uint16)[::2]
+    adc_data = np.fromfile(file_path, dtype=np.uint16)
     adc_data = adc_data.reshape(NUM_FRAMES, -1)
     all_data = np.apply_along_axis(DCA1000.organize, 1, adc_data, num_chirps=NUM_CHIRPS, num_rx=NUM_RX,
                                    num_samples=NUM_ADC_SAMPLES)

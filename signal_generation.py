@@ -20,12 +20,12 @@ T_r = 50 * 1e-6  # duration of one cycle
 f_r = 3.5e9  # Hz
 m_w = 70e12
 
-n_r = 1000  # number of chirps
-T_M = 50  # sec
+n_r = 200  # number of chirps
+T_M = 10  # sec
 
 # sample settings
 f_s = 4e6  # 4 MHz
-n_s = int(T_r * f_s) + 1
+n_s = 200
 
 f_0 = 77.7 * 1e9
 
@@ -51,14 +51,14 @@ t = np.linspace(0, T_r, n_s)
 # plt.title("Chirp sequence Modulation, transmitted signal $f_t(t)$")
 # plt.show()
 
-amp_t = 1  # db
-amp_r = 1  # db
+amp_t = 10  # db
+amp_r = 10  # db
 
 targets = [
     # (dist, [( Amplitude (m) , Frequency (Hz) , Phase (Rad))...])
     # (1, [(0.1, 0.1, 0), ]),
 
-    (2, [(0.05, 1, 0), ]),
+    (0.5, [(0.01, 1, 0), ]),
 
     # (3, [(0.05, 2, 0),
     #      (0.1, 0.1, 0), ]),
@@ -121,18 +121,28 @@ freq_res = f_s / n_s
 table = np.zeros((n_r, n_s), dtype=np.complex)
 
 for chirp_nr in range(n_r):
-    t_start = int(chirp_nr * (1 / f_chirp))
+    t_start = chirp_nr * (1 / f_chirp)
     t_frame = np.linspace(t_start, t_start + T_r, n_s)
     v_sample = _mixing_func(t_frame)
     table[chirp_nr, :] = v_sample
 
-# table = load_file(all_data["65cm"])[0]
-table -= np.average(table)
+# plt.plot(get_all_ranges(np.linspace(0,50,))[0])
+# plt.show()
+
+table = load_file(all_data["exp5_2_3"])[0]
+# table -= np.average(table, axis=0)
+
+# table, range_res, vel_res = load_file("data/18032021/empty_2lane_Raw_0.bin")
+
+# table = np.average(table, axis=1)
 
 chirp0_samples = table[0, :]
 chirp0_magnitude = np.abs(fft(chirp0_samples))
 frequencies = np.arange(0, n_s // 2) * f_s / n_s
 
+
+# plt.scatter(np.linspace(0,200,200),chirp0_magnitude)
+# plt.show()
 
 def freq_to_range(f):
     return f * c / (2 * m_w)
@@ -152,6 +162,10 @@ for chirp_nr in range(n_r):
 range_table = range_table[:, range_filter]
 phase_range_map = extract_phases(range_table)
 
+phase_partial = phase_range_map[0, :]
+# plt.plot(phase_partial)
+# plt.show()
+
 avg_abs_power = np.average(np.abs(range_table), axis=0)
 max_power_bin_idx = np.argmax(avg_abs_power)
 max_power_bin = ranges[max_power_bin_idx]
@@ -166,12 +180,12 @@ slow_time_filtered = slow_timeline[slow_time_filter]
 
 h = hanning(n_r)
 phase_fft = fft(phases * (h))
-phase_frequencies = np.arange(0, n_r // 2) * f_chirp / n_r
-
+phase_frequencies_full = np.arange(0, n_r) * f_chirp / n_r
+phase_frequencies = phase_frequencies_full[:len(phase_frequencies_full) // 2]
 phase_freq_filter = (phase_frequencies > freq_range_bottom) & (phase_frequencies < freq_range_top)
 phase_freq_filtered = phase_frequencies[phase_freq_filter]
 
-phase_filter = np.abs(phase_fft) < 150
+phase_filter = (np.abs(phase_fft) < 10) | ((phase_frequencies_full < 0.1) | (phase_frequencies_full >= 2))
 phases_fft_filtered = phase_fft.copy()
 phases_fft_filtered[phase_filter] = 0
 
